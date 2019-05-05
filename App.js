@@ -4,6 +4,7 @@ import {
   StatusBar,
   StyleSheet,
   View,
+  ActivityIndicator,
   // Text,
   // Button
 } from 'react-native';
@@ -21,7 +22,8 @@ import {
   createStackNavigator,
 } from 'react-navigation';
 import { AppLoading, Asset, Font, Icon } from 'expo';
-import AppNavigator from './navigation/AppNavigator';
+// import AppNavigator from './navigation/AppNavigator';
+import CameraScreen from './screens/CameraScreen';
 
 import { centerScreen } from './src/css/style';
 
@@ -75,7 +77,29 @@ export default class App extends React.Component {
   //   this.setState({ isLoadingComplete: true });
   // };
 
+  constructor(props) {
+    super(props);
+    this.state = { loading: true };
+  }
+    
+  async componentWillMount() {
+    await Font.loadAsync({
+      Roboto: require("native-base/Fonts/Roboto.ttf"),
+      Roboto_medium: require("native-base/Fonts/Roboto_medium.ttf")
+    });
+    this.setState({ loading: false });
+  }
+
   render () {
+    if (this.state.loading) {
+      return (
+        <View
+          style={ styles.centerScreen }
+        >
+          <ActivityIndicator size="large" color="#0000ff" />
+        </View>
+      )
+    }
     return (
       <AppContainer />
     );
@@ -90,14 +114,21 @@ class WelcomeScreen extends Component {
       >
         <Text>Welcome Screen</Text>
         <View style={styles.rowContainer}>
-          <Button
+          {/* <Button
             bordered
             onPress={() => this.props.navigation.navigate('Dashboard')}
           ><Text>Login</Text></Button>
           <Button
             bordered
             onPress={() => alert ('Sign Up')}
-          ><Text>Sign Up</Text></Button>
+          ><Text>Sign Up</Text></Button> */}
+          <Button
+            title="Open Camera"
+            bordered
+            onPress={() => this.props.navigation.navigate('Camera')}
+          >
+            <Text>Open Camera</Text>
+          </Button>
         </View>
       </View>
     );
@@ -230,6 +261,25 @@ const SettingStack = createStackNavigator({
   },
 });
 
+const CameraStack = createStackNavigator({
+  Camera: {
+    screen: CameraScreen,
+    navigationOptions: ({ navigation }) => {
+      return {
+        headerTitle: 'Camera',
+        headerLeft: (
+          <Icon.Ionicons
+            style={{ paddingLeft: 10 }}
+            name="ios-arrow-dropleft"
+            size={30} 
+            onPress={() => navigation.navigate('Welcome')}
+          />
+        )
+      }
+    }
+  }
+})
+
 const DashboardBottomTab = createBottomTabNavigator({
   FeedStack,
   ProfileStack,
@@ -274,6 +324,9 @@ const AppSwitchNavigator = createSwitchNavigator({
   },
   Dashboard: {
     screen: AppDrawerNavigator
+  },
+  Camera: {
+    screen: CameraStack
   }
 });
 
