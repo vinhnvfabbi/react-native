@@ -1,4 +1,11 @@
-import { Constants, Camera, FileSystem, Permissions, BarCodeScanner } from 'expo';
+import {
+  Constants,
+  Camera,
+  FileSystem,
+  Permissions,
+  BarCodeScanner,
+  
+} from 'expo';
 import React from 'react';
 import {
   Alert,
@@ -6,11 +13,12 @@ import {
   Text,
   View,
   TouchableOpacity,
-  Slider,
+  Dimensions,
   Platform
 } from 'react-native';
 import GalleryScreen from './GalleryScreen';
 import isIPhoneX from 'react-native-is-iphonex';
+import Slider from "react-native-slider";
 
 import { 
   Ionicons,
@@ -68,11 +76,14 @@ export default class CameraScreen extends React.Component {
     faces: [],
     newPhotos: false,
     permissionsGranted: null,
+    audioPermissionGranted: null,
     pictureSize: undefined,
     pictureSizes: [],
     pictureSizeId: 0,
     showGallery: false,
     showMoreOptions: false,
+    isTakePicture: true,
+    isRecord: false,
   };
 
   async componentWillMount() {
@@ -83,7 +94,7 @@ export default class CameraScreen extends React.Component {
   async componentDidMount() {
     const isDirectoryExists = await FileSystem.getInfoAsync(FileSystem.documentDirectory + 'photos')
     console.log('isDirectoryExists: ', isDirectoryExists);
-    if (!isDirectoryExists && !isDirectoryExists.exists) {
+    if (!isDirectoryExists.exists) {
       FileSystem.makeDirectoryAsync(FileSystem.documentDirectory + 'photos').catch(e => {
         console.log(e, 'Directory exists');
       });
@@ -120,10 +131,43 @@ export default class CameraScreen extends React.Component {
   toggleFaceDetection = () => this.setState({ faceDetecting: !this.state.faceDetecting });
 
   takePicture = () => {
+    this.setState({
+      isTakePicture: true,
+      isRecord: false,
+    });
     if (this.camera) {
       this.camera.takePictureAsync({ onPictureSaved: this.onPictureSaved });
     }
   };
+
+  record = async () => {
+    this.setState({
+      isTakePicture: false,
+      isRecord: true,
+    });
+
+    const { status } = await Permissions.askAsync(Permissions.AUDIO_RECORDING);
+    this.setState({ audioPermissionGranted: status === 'granted' });
+
+    if (this.state.audioPermissionGranted) {
+      if (this.camera) {
+        const recordData = await this.camera.recordAsync({ maxDuration: 5 });
+        await FileSystem.moveAsync({
+          from: recordData.uri,
+          to: `${FileSystem.documentDirectory}photos/${Date.now()}_video.mp4`,
+        });
+        this.setState({ newPhotos: true });
+        console.log('record data: ', recordData);
+      }
+    } else {
+      Alert.alert('Audio permission denied');
+    }
+
+    this.setState({
+      isTakePicture: true,
+      isRecord: false,
+    })
+  }
 
   handleMountError = ({ message }) => console.error(message);
 
@@ -266,27 +310,50 @@ export default class CameraScreen extends React.Component {
       </TouchableOpacity>   
     </View>
 
-  renderBottomBar = () =>
-    <View
-      style={styles.bottomBar}>
-      <TouchableOpacity style={styles.bottomButton} onPress={this.toggleMoreOptions}>
-        <Octicons name="kebab-horizontal" size={30} color="white"/>
-      </TouchableOpacity>
-      <View style={{ flex: 0.4 }}>
-        <TouchableOpacity
-          onPress={this.takePicture}
-          style={{ alignSelf: 'center' }}
-        >
-          <Ionicons name="ios-radio-button-on" size={70} color="white" />
+  renderBottomBar = () => (
+    <View style={styles.bottomBarWrapper}>
+      <View>
+        <Slider
+          style={styles.zoomStyle}
+          minimumTrackTintColor="#fff"
+          thumbTintColor="#fff"
+          minimumValue={0}
+          maximumValue={1}
+          step={0.1}
+          value={this.state.zoom}
+          onValueChange={value => this.setState({ zoom: value })}
+        />
+      </View>
+      <View
+        style={styles.bottomBar}
+      >
+        <TouchableOpacity style={styles.bottomButton} onPress={this.toggleMoreOptions}>
+          <Octicons name="kebab-horizontal" size={30} color="white"/>
         </TouchableOpacity>
-      </View> 
-      <TouchableOpacity style={styles.bottomButton} onPress={this.toggleView}>
-        <View>
-          <Foundation name="thumbnails" size={30} color="white" />
-          {this.state.newPhotos && <View style={styles.newPhotosDot}/>}
+        <View style={{ flex: 0.4 }}>
+          <View style={styles.recordNPic}>
+            <TouchableOpacity
+              onPress={this.takePicture}
+              style={{ alignSelf: 'center' }}
+            >
+              <Ionicons name="ios-radio-button-on" size={this.state.isTakePicture ? 70 : 20} color="white" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={this.record}
+            >
+              <Foundation style={{marginLeft: 5}} name="record" size={this.state.isRecord ? 70 : 20} color="white" />
+            </TouchableOpacity>
+          </View>
         </View>
-      </TouchableOpacity>
+        <TouchableOpacity style={styles.bottomButton} onPress={this.toggleView}>
+          <View>
+            <Foundation name="thumbnails" size={30} color="white" />
+            {this.state.newPhotos && <View style={styles.newPhotosDot}/>}
+          </View>
+        </TouchableOpacity>
+      </View>
     </View>
+  )
 
   renderMoreOptions = () =>
     (
@@ -386,14 +453,24 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     paddingTop: Constants.statusBarHeight / 2,
   },
+  bottomBarWrapper: {
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   bottomBar: {
     paddingBottom: isIPhoneX ? 25 : 5,
-    backgroundColor: 'transparent',
-    alignSelf: 'flex-end',
-    justifyContent: 'space-between',
-    flex: 0.12,
     flexDirection: 'row',
+    justifyContent: 'space-between',
   },
+  // bottomBar: {
+  //   paddingBottom: isIPhoneX ? 25 : 5,
+  //   backgroundColor: 'transparent',
+  //   alignSelf: 'flex-end',
+  //   justifyContent: 'space-between',
+  //   flex: 0.12,
+  //   flexDirection: 'row',
+  // },
   noPermissions: {
     flex: 1,
     alignItems:'center',
@@ -502,4 +579,12 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
   },
+  zoomStyle: {
+    width: Dimensions.get("window").width * 0.5
+  },
+  recordNPic: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center'
+  }
 });
