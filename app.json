@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "React native app",
+    "name": "CApp",
     "slug": "RNNApp",
     "privacy": "public",
     "sdkVersion": "32.0.0",
@@ -27,6 +27,7 @@
     },
     "facebookScheme": "fb1218081008360323",
     "facebookAppId": "1218081008360323",
-    "facebookDisplayName": "CApp"
+    "facebookDisplayName": "CApp",
+    "description": ""
   }
 }

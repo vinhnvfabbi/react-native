@@ -21,9 +21,15 @@ import {
   createBottomTabNavigator,
   createStackNavigator,
 } from 'react-navigation';
-import { AppLoading, Asset, Font, Icon } from 'expo';
+import {
+  AppLoading,
+  Asset,
+  Font,
+  Icon
+} from 'expo';
 // import AppNavigator from './navigation/AppNavigator';
 import CameraScreen from './screens/CameraScreen';
+import LocationScreen from './screens/LocationScreen';
 
 import { centerScreen } from './src/css/style';
 
@@ -123,11 +129,16 @@ class WelcomeScreen extends Component {
             onPress={() => alert ('Sign Up')}
           ><Text>Sign Up</Text></Button> */}
           <Button
-            title="Open Camera"
             bordered
             onPress={() => this.props.navigation.navigate('Camera')}
           >
-            <Text>Open Camera</Text>
+            <Text>Camera</Text>
+          </Button>
+          <Button
+            bordered
+            onPress={() => this.props.navigation.navigate('Location')}
+          >
+            <Text>Location</Text>
           </Button>
         </View>
       </View>
@@ -278,7 +289,26 @@ const CameraStack = createStackNavigator({
       }
     }
   }
-})
+});
+
+const LocationStack = createStackNavigator({
+  Location: {
+    screen: LocationScreen,
+    navigationOptions: ({ navigation }) => {
+      return {
+        headerTitle: 'Location',
+        headerLeft: (
+          <Icon.Ionicons
+            style={{ paddingLeft: 10 }}
+            name="ios-arrow-dropleft"
+            size={30} 
+            onPress={() => navigation.navigate('Welcome')}
+          />
+        )
+      }
+    }
+  }
+});
 
 const DashboardBottomTab = createBottomTabNavigator({
   FeedStack,
@@ -327,6 +357,9 @@ const AppSwitchNavigator = createSwitchNavigator({
   },
   Camera: {
     screen: CameraStack
+  },
+  Location: {
+    screen: LocationStack
   }
 });
 
@@ -338,6 +371,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   rowContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  middle: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center'

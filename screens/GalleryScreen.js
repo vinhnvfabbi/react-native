@@ -15,7 +15,10 @@ import {
   Permissions,
   Facebook
 } from 'expo';
-import { MaterialIcons } from '@expo/vector-icons';
+import {
+  MaterialIcons,
+  Foundation
+} from '@expo/vector-icons';
 import Photo from '../components/Camera/Photo';
 
 const PHOTOS_DIR = FileSystem.documentDirectory + 'photos';
@@ -30,6 +33,7 @@ export default class GalleryScreen extends React.Component {
 
   componentDidMount = async () => {
     const photos = await FileSystem.readDirectoryAsync(PHOTOS_DIR);
+    console.log('GalleryScreen componentDidMount: ', photos);
     this.setState({ photos });
   };
 
@@ -65,11 +69,14 @@ export default class GalleryScreen extends React.Component {
   };
 
   _sharePictures = async () => {
+    const photos = this.state.selected;
+    console.log('_sharePictures photo data: ', photos);
     try {
       const result = await Share.share(
         {
           message:
             'React Native | A framework for building native apps using React',
+          url: photos[0],
         },
         {
           // Android
@@ -91,7 +98,7 @@ export default class GalleryScreen extends React.Component {
             // 'com.apple.reminders.RemindersEditorExtension',
             // 'com.apple.mobilenotes.SharingExtension',
             // 'com.apple.mobileslideshow.StreamShareService',
-            'com.linkedin.LinkedIn.ShareExtension',
+            // 'com.linkedin.LinkedIn.ShareExtension',
             // 'pinterest.ShareExtension',
             // 'com.google.GooglePlus.ShareExtension',
             // 'com.tumblr.tumblr.Share-With-Tumblr',
@@ -135,12 +142,33 @@ export default class GalleryScreen extends React.Component {
     // }
   }
 
-  renderPhoto = fileName => 
-    <Photo
-      key={fileName}
-      uri={`${PHOTOS_DIR}/${fileName}`}
-      onSelectionToggle={this.toggleSelection}
-    />;
+  renderPhoto = fileName => {
+    if (fileName.includes('video')) {
+      return (
+        <View 
+          style={styles.positionRelative}
+          key={`_video_${fileName}`}
+        >
+          <View style={[styles.positionAbsolute, styles.pos]}>
+            <Foundation name="play-video" size={25} color="white" />
+          </View>
+          <Photo
+            key={`${fileName}_video`}
+            uri={`${PHOTOS_DIR}/${fileName}`}
+            onSelectionToggle={this.toggleSelection}
+          />
+        </View>        
+      );
+    }
+
+    return (
+      <Photo
+        key={fileName}
+        uri={`${PHOTOS_DIR}/${fileName}`}
+        onSelectionToggle={this.toggleSelection}
+      />
+    );
+  }
 
   render() {
     return (
@@ -197,5 +225,20 @@ const styles = StyleSheet.create({
   },
   whiteText: {
     color: 'white',
-  }
+  },
+  iconWrapper: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  positionRelative: {
+    position: 'relative'
+  },
+  positionAbsolute: {
+    position: 'absolute'
+  },
+  pos: {
+    zIndex: 9,
+    top: 5,
+    right: 45,
+  },
 });
