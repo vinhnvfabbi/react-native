@@ -1,25 +1,27 @@
 import React from 'react';
 import {
-  Image,
   StyleSheet,
   View,
   TouchableOpacity,
   Text,
   ScrollView,
-  Share
+  Share,
+  Button,
 } from 'react-native';
+// import Video from 'react-native-video';
+import Modal from 'react-native-modal';
 import {
   FileSystem,
-  FaceDetector,
   MediaLibrary,
   Permissions,
-  Facebook
+  Video
 } from 'expo';
 import {
   MaterialIcons,
   Foundation
 } from '@expo/vector-icons';
 import Photo from '../components/Camera/Photo';
+import { centerScreen } from '../src/css/style';
 
 const PHOTOS_DIR = FileSystem.documentDirectory + 'photos';
 
@@ -29,6 +31,8 @@ export default class GalleryScreen extends React.Component {
     images: {},
     photos: [],
     selected: [],
+    isShowPreviewVideoModal: false,
+    videoName: null,
   };
 
   componentDidMount = async () => {
@@ -119,27 +123,37 @@ export default class GalleryScreen extends React.Component {
     } catch (error) {
       alert(error.message);
     }
-    // try {
-    //   const {
-    //     type,
-    //     token,
-    //     expires,
-    //     permissions,
-    //     declinedPermissions,
-    //   } = await Facebook.logInWithReadPermissionsAsync("1218081008360323", {
-    //     permissions: ['public_profile'],
-    //   });
-    //   if (type === 'success') {
-    //     // Get the user's name using Facebook's Graph API
-    //     const response = await fetch(`https://graph.facebook.com/me?access_token=${token}`);
-    //     console.log('_sharePictures: ', response);
-    //     alert('Logged in!');
-    //   } else {
-    //     // type === 'cancel'
-    //   }
-    // } catch ({ message }) {
-    //   alert(`Facebook Login Error: ${message}`);
-    // }
+  }
+
+  _openPreviewVideoModal = (renderingVideoName) => {
+    this.setState({
+      isShowPreviewVideoModal: true,
+      videoName: renderingVideoName
+    });
+  }
+
+  _renderVideoPreview = () => {
+    const { videoName } = this.state;
+    console.log('_renderVideoPreview: ', videoName);
+    if (videoName) {
+      return (
+        <View>
+          <Text style={{color: '#fff'}}>{`${PHOTOS_DIR}/${videoName}`}</Text>
+          <Video
+            source={{ uri: `${PHOTOS_DIR}/${videoName}` }}
+            rate={1.0}
+            volume={1.0}
+            isMuted={false}
+            resizeMode="cover"
+            shouldPlay
+            isLooping
+            style={{ width: 300, height: 300 }}
+          />
+        </View>
+      );
+    }
+
+    return <View />
   }
 
   renderPhoto = fileName => {
@@ -149,9 +163,13 @@ export default class GalleryScreen extends React.Component {
           style={styles.positionRelative}
           key={`_video_${fileName}`}
         >
-          <View style={[styles.positionAbsolute, styles.pos]}>
+          <TouchableOpacity
+            style={[styles.positionAbsolute, styles.pos]}
+            onPress={this._openPreviewVideoModal(fileName)}
+          >
             <Foundation name="play-video" size={25} color="white" />
-          </View>
+          </TouchableOpacity>
+
           <Photo
             key={`${fileName}_video`}
             uri={`${PHOTOS_DIR}/${fileName}`}
@@ -193,6 +211,18 @@ export default class GalleryScreen extends React.Component {
             {this.state.photos.map(this.renderPhoto)}
           </View>
         </ScrollView>
+        <Modal
+          isVisible={this.state.isShowPreviewVideoModal}
+        >
+          {this._renderVideoPreview()}
+          <Button
+            title="Close"
+            onPress={() => this.setState({ 
+              isShowPreviewVideoModal: false,
+              videoName: null
+             })}
+          />
+        </Modal>
       </View>
     );
   }
@@ -241,4 +271,5 @@ const styles = StyleSheet.create({
     top: 5,
     right: 45,
   },
+  centerScreen,
 });

@@ -4,11 +4,13 @@ import {
   Text,
   View,
   StyleSheet,
-  Modal,
+  // Modal,
   Linking,
   Alert,
-  Button
+  Button,
+  AppState
 } from 'react-native';
+import Modal from 'react-native-modal';
 // import { Button } from 'native-base';
 import reverseGeocode from 'latlng-to-zip';
 import { Constants, Location, Permissions, IntentLauncherAndroid  } from 'expo';
@@ -20,9 +22,11 @@ export default class App extends Component {
     errorMessage: null,
     isShowEnableLocationModal: false,
     openDeviceSetting: false,
+    appState: AppState.currentState
   };
 
   componentWillMount() {
+    AppState.addEventListener('change', this._handlerAppStateChange);
     if (Platform.OS === 'android' && !Constants.isDevice) {
       this.setState({
         errorMessage: 'Oops, this will not work on Sketch in an Android emulator. Try it on your device!',
@@ -32,6 +36,18 @@ export default class App extends Component {
     }
   }
 
+  componentWillUnmount() {
+    AppState.removeEventListener('change', this._handlerAppStateChange);
+  }
+
+  _handlerAppStateChange = (nextAppState) => {
+    if (this.state.appState.match(/inactive|background/) && nextAppState === 'active') {
+      console.log('App has come to the foreground!');
+      this._getLocationAsync();
+    }
+    this.setState({appState: nextAppState});
+  }
+
   _getLocationAsync = async () => {
     try {
       let { status } = await Permissions.askAsync(Permissions.LOCATION);
@@ -39,6 +55,8 @@ export default class App extends Component {
         this.setState({
           errorMessage: 'Permission to access location was denied',
         });
+
+        return;
       }
 
       let location = await Location.getCurrentPositionAsync({});
@@ -53,13 +71,10 @@ export default class App extends Component {
   };
 
   _openSettingHandler = () => {
-    console.log('open setting');
-    // if (!this.state.openDeviceSetting) return;
+    if (!this.state.openDeviceSetting) return undefined;
     if (Platform.OS === 'ios') {
-      console.log('open iOS setting');
       Linking.openURL('app-settings:');
     } else {
-      console.log('open android setting');
       IntentLauncherAndroid.startActivityAsync(IntentLauncherAndroid.ACTION_LOCATION_SOURCE_SETTINGS);
     }
 
@@ -79,25 +94,14 @@ export default class App extends Component {
       <View style={styles.container}>
         <Text style={styles.paragraph}>{text}</Text>
         <Modal
-          onRequestClose={this._openSettingHandler}
-          visible={this.state.isShowEnableLocationModal}
+          onModalHide={this._openSettingHandler}
+          isVisible={this.state.isShowEnableLocationModal}
         >
           <View
             style={styles.centerScreen}
           >
-            {/* <Button
-              bordered
-              onPress={() => {
-                this.setState({
-                  isShowEnableLocationModal: false,
-                  openDeviceSetting: true,
-                })
-              }}
-            >
-              <Text>Enable location</Text>
-            </Button> */}
             <Button
-              title="Location"
+              title="Enable Location"
               onPress={() => {
                 this.setState({
                   isShowEnableLocationModal: false,
