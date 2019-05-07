@@ -5,6 +5,7 @@ import {
   StyleSheet,
   View,
   ActivityIndicator,
+  Linking,
   // Text,
   // Button
 } from 'react-native';
@@ -25,7 +26,8 @@ import {
   AppLoading,
   Asset,
   Font,
-  Icon
+  Icon,
+  IntentLauncherAndroid
 } from 'expo';
 // import AppNavigator from './navigation/AppNavigator';
 import CameraScreen from './screens/CameraScreen';

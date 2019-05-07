@@ -4,7 +4,6 @@ import {
   FileSystem,
   Permissions,
   BarCodeScanner,
-  
 } from 'expo';
 import React from 'react';
 import {
